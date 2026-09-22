@@ -52,3 +52,9 @@ SELECT
     NOW() - (random() * interval '90 days'),
     (random() < 0.6)
 FROM generate_series(1, 80) AS i;
+
+-- Simulate player dropout for churn analysis
+UPDATE bets
+SET created_at = created_at - INTERVAL '45 days'
+WHERE player_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+AND created_at > NOW() - INTERVAL '30 days';
