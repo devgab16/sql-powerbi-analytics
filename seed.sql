@@ -58,3 +58,43 @@ UPDATE bets
 SET created_at = created_at - INTERVAL '45 days'
 WHERE player_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 AND created_at > NOW() - INTERVAL '30 days';
+
+-- Additional bets: nighttime peak hours (19h-23h), players 11-50 only
+INSERT INTO bets (player_id, game_id, bet_amount, payout, created_at)
+WITH raw_bets AS (
+    SELECT
+        floor(random() * 40 + 11)::int AS player_id,
+        floor(random() * 5 + 1)::int AS game_id,
+        round((random() * 190 + 10)::numeric, 2) AS bet_amount,
+        date_trunc('day', NOW() - (floor(random() * 90) * interval '1 day'))
+            + ((floor(random() * 5) + 19) * interval '1 hour')
+            + (floor(random() * 60) * interval '1 minute') AS created_at
+    FROM generate_series(1, 500)
+)
+SELECT
+    player_id,
+    game_id,
+    bet_amount,
+    round((bet_amount * (0.85 + random() * 0.25))::numeric, 2) AS payout,
+    created_at
+FROM raw_bets;
+
+-- Additional bets: single-day high-volume event, players 11-50 only
+INSERT INTO bets (player_id, game_id, bet_amount, payout, created_at)
+WITH raw_bets AS (
+    SELECT
+        floor(random() * 40 + 11)::int AS player_id,
+        floor(random() * 5 + 1)::int AS game_id,
+        round((random() * 190 + 10)::numeric, 2) AS bet_amount,
+        (CURRENT_DATE - INTERVAL '15 days')
+            + (floor(random() * 24) * interval '1 hour')
+            + (floor(random() * 60) * interval '1 minute') AS created_at
+    FROM generate_series(1, 800)
+)
+SELECT
+    player_id,
+    game_id,
+    bet_amount,
+    round((bet_amount * (0.85 + random() * 0.25))::numeric, 2) AS payout,
+    created_at
+FROM raw_bets;

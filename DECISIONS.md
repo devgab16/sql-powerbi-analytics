@@ -42,3 +42,8 @@ The current `payout` generation uses a fixed random multiplier (0.85-1.10) appli
 
 ## 8. Churn required a deliberate data adjustment
 The original synthetic bet data simulated only continuously active players, resulting in 0% churn regardless of the time window used — no player had a gap of 30+ days without a bet, since bets were randomly distributed with no "dropout" behavior modeled. To make the churn metric meaningful, bets from a subset of players (10 out of 50) were shifted 45 days back in time via an `UPDATE`, simulating players who stopped betting. This produced a realistic 20% churn rate over a 30-day window.
+
+## 9. Added realistic time-based patterns to the dataset
+The original dataset distributed all bets uniformly across the 90-day window, with no variation by time of day or date. To better simulate real casino traffic patterns, two additional batches of bets were added: 500 bets concentrated in nighttime peak hours (19h-23h), and 800 bets concentrated on a single date, simulating a high-volume event day (~36x the average daily volume).
+
+Both additions were restricted to players 11-50, deliberately excluding players 1-10. This preserves the churn scenario established in decision #8 (players 1-10 simulate deliberate dropout) — if the new batches had sampled from the full player pool, there was a real risk of generating recent bets for an "inactive" player, silently invalidating the documented 20% churn rate. Verified after insertion: churn remained exactly 20% (10/50), confirming the constraint worked as intended.
