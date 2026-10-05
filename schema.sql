@@ -46,3 +46,7 @@ CREATE TABLE player_bonuses (
     is_redeemed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Schema evolution: track which bonus funded a bet
+ALTER TABLE bets
+ADD COLUMN funded_by_player_bonus_id INTEGER REFERENCES player_bonuses(player_bonus_id);

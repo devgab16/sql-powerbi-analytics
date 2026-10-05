@@ -98,3 +98,60 @@ SELECT
     round((bet_amount * (0.85 + random() * 0.25))::numeric, 2) AS payout,
     created_at
 FROM raw_bets;
+
+-- Data consistency: a bonus cannot be redeemed after the player's last bet
+UPDATE player_bonuses pb
+SET is_redeemed = false
+WHERE pb.is_redeemed = true
+  AND pb.granted_at > (SELECT MAX(b.created_at)
+                       FROM bets b
+                       WHERE b.player_id = pb.player_id);
+
+-- Bonus abuse scenario: players 1-5 claim a Reload Bonus and leave after one bet
+INSERT INTO player_bonuses (player_id, bonus_id, granted_at, is_redeemed)
+SELECT
+    b.player_id,
+    (SELECT bonus_id FROM bonuses WHERE name = 'Reload Bonus'),
+    MAX(b.created_at) - INTERVAL '2 hours',
+    true
+FROM bets b
+WHERE b.player_id BETWEEN 1 AND 5
+GROUP BY b.player_id;
+
+UPDATE bets b
+SET funded_by_player_bonus_id = pb.player_bonus_id,
+    bet_amount = bo.bonus_amount,
+    payout = ROUND(b.payout / b.bet_amount * bo.bonus_amount, 2)
+FROM player_bonuses pb
+JOIN bonuses bo ON bo.bonus_id = pb.bonus_id
+WHERE pb.player_id = b.player_id
+  AND pb.player_id BETWEEN 1 AND 5
+  AND bo.name = 'Reload Bonus'
+  AND pb.granted_at = b.created_at - INTERVAL '2 hours'
+  AND b.created_at = (SELECT MAX(created_at)
+                      FROM bets
+                      WHERE player_id = b.player_id);
+
+-- Link every other redeemed bonus to the first unfunded bet placed after it
+-- (safe to re-run: bonuses already linked are skipped)
+WITH first_bets AS (
+    SELECT DISTINCT ON (pb.player_bonus_id)
+        pb.player_bonus_id,
+        b.bet_id,
+        bo.bonus_amount
+    FROM player_bonuses pb
+    JOIN bonuses bo ON bo.bonus_id = pb.bonus_id
+    JOIN bets b ON b.player_id = pb.player_id
+               AND b.created_at > pb.granted_at
+               AND b.funded_by_player_bonus_id IS NULL
+    WHERE pb.is_redeemed = true
+      AND NOT EXISTS (SELECT 1 FROM bets x
+                      WHERE x.funded_by_player_bonus_id = pb.player_bonus_id)
+    ORDER BY pb.player_bonus_id, b.created_at
+)
+UPDATE bets b
+SET funded_by_player_bonus_id = fb.player_bonus_id,
+    bet_amount = fb.bonus_amount,
+    payout = ROUND(b.payout / b.bet_amount * fb.bonus_amount, 2)
+FROM first_bets fb
+WHERE b.bet_id = fb.bet_id;
