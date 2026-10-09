@@ -2,7 +2,7 @@
 INSERT INTO providers (name, country) VALUES
 ('Pragmatic Play', 'Malta'),
 ('Evolution', 'Malta'),
-('NetEnt', 'Suecia');
+('NetEnt', 'Sweden');
 
 -- Games
 INSERT INTO games (name, provider_id, rtp) VALUES
@@ -23,7 +23,7 @@ INSERT INTO players (name, email, city)
 SELECT
     'Player ' || i,
     'player' || i || '@test.com',
-    (ARRAY['Cuiaba', 'Sao Paulo', 'Curitiba', 'Recife'])[floor(random() * 4 + 1)]
+    (ARRAY['Valletta', 'Dublin', 'Helsinki', 'Berlin'])[floor(random() * 4 + 1)]
 FROM generate_series(1, 50) AS i;
 
 -- Bets
