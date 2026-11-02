@@ -1,4 +1,6 @@
-﻿# iGaming SQL Analytics
+﻿# SQL & Power BI Analytics
+
+Relational data modeling, metric queries in SQL and a Power BI dashboard, built on a synthetic transactional dataset (online gaming domain). The project covers revenue, churn and promotion-abuse metrics, each validated against independent queries and documented decision by decision.
 
 ## Situation
 Online casino operations generate large volumes of betting data that need to be structured and analyzed to answer real business questions: how much revenue the house generates, which games perform best, how many players stop playing over time, and whether bonus offers are being exploited by players who claim them and leave.
@@ -14,7 +16,7 @@ Design and populate a relational database simulating a casino operation, extract
 - Extended the schema to link each bet to the bonus that funded it, through a nullable foreign key added with `ALTER TABLE`. Linking the data exposed bonuses marked as redeemed after the player's last bet; these were corrected with a rule-based update instead of hard-coded IDs.
 - Designed a bonus abuse scenario (players who claim a bonus, bet once and leave) and defined a metric for it: a bonus counts as abused when the player places no other bet within 7 days, excluding bets whose 7-day window has not closed yet.
 - Wrote and validated five analytical queries — total GGR, GGR by game, NGR, 30-day churn and bonus abuse rate — all measured against a fixed reference date (the most recent bet), so results do not drift over time — see `queries.sql`.
-- Built a Power BI dashboard connected to the PostgreSQL database, with DAX measures validated against the SQL results — see `igaming-sql-analytics-dashboard.pbix`.
+- Built a Power BI dashboard connected to the PostgreSQL database, with DAX measures validated against the SQL results — see `sql-powerbi-analytics-dashboard.pbix`.
 - Documented every non-obvious design decision and its reasoning in `DECISIONS.md`, including the known limitations of the dataset.
 
 ## Result
@@ -28,6 +30,12 @@ Design and populate a relational database simulating a casino operation, extract
 ## Dashboard
 ![Power BI dashboard](dashboard.png)
 
+## Applying this elsewhere
+The same building blocks apply outside this domain: churn with a fixed reference date measures retention in subscriptions and fintech; the bonus abuse metric is the same logic as coupon or sign-up bonus abuse in e-commerce and fintech; net revenue after redeemed incentives applies to any business that runs promotions; and excluding records whose measurement window has not closed avoids a common bias in any time-based metric.
+
+## How AI was used
+This project was AI-assisted and human-directed. I directed the project and made the final call on every design decision, from the schema to the metric definitions. I used an AI assistant to explain SQL and DAX concepts, propose options and draft parts of the documentation, which I reviewed and edited. Every result was checked against independent queries, and that verification exposed issues such as a 0% churn artifact and bonus records redeemed after a player's last bet, which were then fixed and documented in `DECISIONS.md`.
+
 ## Tech Stack
 PostgreSQL, SQL (DDL, DML, DQL, joins, subqueries, CTEs, `NOT EXISTS`, filtered aggregates), Power BI (DAX), Git/GitHub.
 
@@ -36,11 +44,11 @@ PostgreSQL, SQL (DDL, DML, DQL, joins, subqueries, CTEs, `NOT EXISTS`, filtered 
 - `seed.sql` — synthetic data generation (regenerates an equivalent dataset on each run)
 - `queries.sql` — core metric queries
 - `DECISIONS.md` — architecture decisions and reasoning
-- `igaming-sql-analytics-dashboard.pbix` — Power BI dashboard
+- `sql-powerbi-analytics-dashboard.pbix` — Power BI dashboard
 - `dashboard.png` — dashboard preview
 
 ## How to Run
-1. Create an empty PostgreSQL database (e.g. `igaming_casino`).
+1. Create an empty PostgreSQL database (e.g. `analytics_db`).
 2. Run `schema.sql`, then `seed.sql`, then `queries.sql`.
 3. Optional: open the `.pbix` file in Power BI Desktop and point the data source to your database.
 
